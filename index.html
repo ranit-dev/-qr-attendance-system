@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance - Alipurduar Government Polytechnic</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="institution-badge">
+                Alipurduar (Damanpur) Government Polytechnic
+            </div>
+            
+            <h1>QR Attendance</h1>
+            
+            <p class="hero-subtitle">
+                Revolutionary attendance management. Simplified, secure, and seamlessly integrated.
+            </p>
+            
+            <div class="cta-buttons">
+                <a href="/scanner" class="btn btn-primary">
+                    📱 Start Scanning
+                </a>
+                <a href="#" class="btn btn-secondary" id="adminDashboardBtn">
+                    ⚙️ Admin Access
+                </a>
+            </div>
+
+            <!-- Mockup Section -->
+            <div class="mockup-container">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="qr-frame">
+                            <div class="qr-code"></div>
+                        </div>
+                        <div class="scan-text">Ready to Scan</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-mockup">
+                    <div class="dashboard-header">
+                        <div class="window-controls">
+                            <div class="window-control control-red"></div>
+                            <div class="window-control control-yellow"></div>
+                            <div class="window-control control-green"></div>
+                        </div>
+                    </div>
+                    <div class="dashboard-content">
+                        <div class="dashboard-stat"></div>
+                        <div class="dashboard-stat"></div>
+                        <div class="dashboard-stat"></div>
+                        <div class="dashboard-stat"></div>
+                        <div class="dashboard-stat"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="features-container">
+            <h2 class="features-title">Built for Excellence</h2>
+            <p class="features-subtitle">
+                Every detail crafted to deliver the most intuitive attendance experience.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Lightning Fast</h3>
+                    <p class="feature-description">
+                        Instant QR code recognition with advanced scanning technology for seamless attendance marking.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Real-time Insights</h3>
+                    <p class="feature-description">
+                        Live attendance tracking with comprehensive analytics and automated reporting capabilities.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Secure & Reliable</h3>
+                    <p class="feature-description">
+                        Enterprise-grade security with encrypted data transmission and reliable cloud infrastructure.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <h3 class="footer-title">Experience the Future of Attendance</h3>
+            <p class="footer-text">
+                Join thousands of institutions already using our modern attendance management solution.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalBtn">×</span>
+            <h2 class="modal-title">Admin Access</h2>
+            <input type="password" id="adminPasswordInput" placeholder="Enter admin password">
+            <button class="btn btn-primary" id="submitPasswordBtn">Authenticate</button>
+            <p id="passwordMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get references to HTML elements
+            const adminButton = document.getElementById('adminDashboardBtn');
+            const passwordModal = document.getElementById('passwordModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const adminPasswordInput = document.getElementById('adminPasswordInput');
+            const submitPasswordBtn = document.getElementById('submitPasswordBtn');
+            const passwordMessage = document.getElementById('passwordMessage');
+
+            // Function to show the modal
+            function showPasswordModal() {
+                passwordModal.style.display = 'block';
+                requestAnimationFrame(() => {
+                    passwordModal.classList.add('show');
+                });
+                adminPasswordInput.value = '';
+                passwordMessage.textContent = '';
+                adminPasswordInput.focus();
+            }
+
+            // Function to hide the modal
+            function hidePasswordModal() {
+                passwordModal.classList.remove('show');
+                setTimeout(() => {
+                    passwordModal.style.display = 'none';
+                }, 300);
+            }
+
+            // Event listener for the "Admin Dashboard" button
+            if (adminButton) {
+                adminButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    showPasswordModal();
+                });
+            }
+
+            // Event listener for the password submit button
+            if (submitPasswordBtn) {
+                submitPasswordBtn.addEventListener('click', async function() {
+                    const enteredPassword = adminPasswordInput.value;
+
+                    try {
+                        const response = await fetch('/admin/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ password: enteredPassword })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            passwordMessage.textContent = "Access granted! Redirecting...";
+                            passwordMessage.className = "password-success";
+                            setTimeout(() => {
+                                window.location.href = "/admin";
+                                hidePasswordModal();
+                            }, 1000);
+                        } else {
+                            passwordMessage.textContent = data.message || "Incorrect password. Please try again.";
+                            passwordMessage.className = "password-error";
+                            adminPasswordInput.value = '';
+                            adminPasswordInput.focus();
+                        }
+                    } catch (error) {
+                        console.error('Error during login fetch:', error);
+                        passwordMessage.textContent = "An error occurred. Please try again.";
+                        passwordMessage.className = "password-error";
+                    }
+                });
+            }
+
+            // Event listener for pressing Enter key in the password input
+            adminPasswordInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitPasswordBtn.click();
+                }
+            });
+
+            // Event listener for the modal close button
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', hidePasswordModal);
+            }
+
+            // Event listener for clicking outside the modal content to close it
+            passwordModal.addEventListener('click', function(event) {
+                if (event.target === passwordModal) {
+                    hidePasswordModal();
+                }
+            });
+
+            // Smooth scroll animations for features
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe feature cards
+            document.querySelectorAll('.feature-card').forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>

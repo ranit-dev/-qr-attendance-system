@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance Scanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/scanner.css') }}">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header Section with Apple-style typography -->
+        <header class="header-section">
+            <h1 class="main-headline">Attendance Scanner</h1>
+            <p class="sub-headline">Point your camera at the QR code to mark your attendance</p>
+            <div class="location-status">
+                <svg class="location-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                <span>Location verification enabled for campus attendance</span>
+            </div>
+        </header>
+
+        <!-- Hero Camera Section - The main focal point -->
+        <section class="camera-hero">
+            <!-- Camera placeholder shown before video loads -->
+            <div class="camera-placeholder" id="camera-placeholder">
+                <svg class="camera-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 15.5c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                </svg>
+                <span>Initializing camera<span class="loading-dots"></span></span>
+            </div>
+            
+            <!-- Video element for camera feed -->
+            <video id="video" autoplay playsinline muted></video>
+        </section>
+
+        <!-- Hidden canvas for QR code processing -->
+        <canvas id="canvas"></canvas>
+
+        <!-- Status Messages Section -->
+        <section class="status-section">
+            <div id="output" class="scanning">Initializing scanner...</div>
+            <div id="error"></div>
+        </section>
+
+        <!-- Registration Number Input (shown when QR is detected) -->
+        <div id="regno-prompt">
+            <p>Please enter your Registration Number</p>
+            <input type="text" id="regno-input" placeholder="e.g., 2021CS001" autocomplete="off">
+            <button id="submit-regno">Submit Attendance</button>
+        </div>
+
+        <!-- Help Section -->
+        <footer class="help-section">
+            <a href="#" class="help-link">Need Help?</a>
+        </footer>
+    </div>
+
+    <!-- Include jsQR library for QR code scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    
+    <script>
+        // Enhanced scanner.js with Apple-inspired UX improvements
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const output = document.getElementById('output');
+            const error = document.getElementById('error');
+            const regnoPrompt = document.getElementById('regno-prompt');
+            const regnoInput = document.getElementById('regno-input');
+            const submitRegnoBtn = document.getElementById('submit-regno');
+            const cameraPlaceholder = document.getElementById('camera-placeholder');
+
+            let isScanning = true;
+            let scannedQrDataString = null; 
+            let stream = null;
+            let userLocation = null;
+            let locationWatchId = null;
+            
+            // Store the registration number in sessionStorage for convenience
+            let savedRegNo = sessionStorage.getItem('savedRegNo');
+
+            // Hide regno prompt initially
+            regnoPrompt.style.display = 'none';
+
+            // Start location tracking with better UX feedback
+            startLocationTracking();
+
+            // Enhanced location tracking with better user feedback
+            function startLocationTracking() {
+                if (!navigator.geolocation) {
+                    console.warn('Geolocation is not supported by this browser');
+                    showMessage('Location services not available. Manual verification may be required.', 'warning');
+                    return;
+                }
+
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 60000
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    updateLocation,
+                    handleLocationError,
+                    options
+                );
+
+                locationWatchId = navigator.geolocation.watchPosition(
+                    updateLocation,
+                    handleLocationError,
+                    options
+                );
+            }
+
+            function updateLocation(position) {
+                if (position.coords.accuracy <= 100) {
+                    userLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    console.log('Location updated:', userLocation);
+                } else {
+                    console.warn('Location accuracy too low:', position.coords.accuracy);
+                    userLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                }
+            }
+
+            function handleLocationError(error) {
+                console.warn('Location error:', error);
+                let errorMessage = 'Location access ';
+                if (error.code === error.PERMISSION_DENIED) {
+                    errorMessage += 'denied. Please enable location services.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    errorMessage += 'unavailable.';
+                } else if (error.code === error.TIMEOUT) {
+                    errorMessage += 'timed out.';
+                }
+                showMessage(errorMessage, 'warning');
+            }
+
+            // Enhanced message display with better visual feedback
+            function showMessage(message, type = 'info') {
+                output.textContent = message;
+                output.className = type;
+                
+                if (type === 'success' || type === 'info') {
+                    error.style.display = 'none';
+                } else if (type === 'error') {
+                    error.textContent = message;
+                    error.style.display = 'block';
+                }
+            }
+
+            function showError(message) {
+                error.textContent = message;
+                error.style.display = 'block';
+                output.className = 'error';
+            }
+
+            // Enhanced camera initialization with better UX
+            async function startCamera() {
+                try {
+                    showMessage('Starting camera...', 'info');
+                    
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    });
+                    
+                    video.srcObject = stream;
+                    
+                    await new Promise((resolve) => {
+                        video.onloadedmetadata = resolve;
+                    });
+
+                    // Hide placeholder and show video with smooth transition
+                    cameraPlaceholder.style.display = 'none';
+                    video.style.display = 'block';
+                    
+                    showMessage('Ready to scan QR code', 'scanning');
+                    requestAnimationFrame(scanFrame);
+                    
+                } catch (err) {
+                    console.error('Camera access error:', err);
+                    showError('Camera access denied. Please allow camera access and refresh the page.');
+                    cameraPlaceholder.innerHTML = `
+                        <svg class="camera-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                        </svg>
+                        <span>Camera access required</span>
+                    `;
+                }
+            }
+
+            function scanFrame() {
+                if (!isScanning || video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    if (isScanning) {
+                        requestAnimationFrame(scanFrame);
+                    }
+                    return;
+                }
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    console.log('QR Code detected:', code.data);
+                    handleQRCode(code.data);
+                } else {
+                    requestAnimationFrame(scanFrame);
+                }
+            }
+
+            function handleQRCode(qrData) {
+                isScanning = false;
+                
+                const trimmedQrData = qrData.trim();
+                console.log('QR Data detected:', trimmedQrData);
+
+                const qrDataParts = trimmedQrData.split('|');
+                
+                if (qrDataParts.length !== 2 || !/^\d+$/.test(qrDataParts[0])) {
+                    showError('Invalid QR code format. Please scan a valid attendance QR code.');
+                    setTimeout(() => {
+                        isScanning = true;
+                        showMessage('Ready to scan QR code', 'scanning');
+                        requestAnimationFrame(scanFrame);
+                    }, 3000);
+                    return;
+                }
+                
+                scannedQrDataString = trimmedQrData;
+                
+                if (savedRegNo) {
+                    showMessage('QR code detected! Using saved registration number...', 'info');
+                    submitAttendanceWithRegNo(savedRegNo);
+                } else {
+                    showMessage('QR code detected successfully!', 'success');
+                    regnoPrompt.style.display = 'block';
+                    regnoInput.focus();
+                }
+            }
+
+            function submitAttendanceWithRegNo(regNo) {
+                if (!scannedQrDataString) {
+                    showError('No QR code scanned. Please scan again.');
+                    resetScanner();
+                    return;
+                }
+                
+                showMessage('Recording attendance...', 'info');
+                regnoPrompt.style.display = 'none';
+                
+                const attendanceData = {
+                    session_id: scannedQrDataString,
+                    reg_no: regNo
+                };
+
+                if (userLocation) {
+                    attendanceData.latitude = userLocation.latitude;
+                    attendanceData.longitude = userLocation.longitude;
+                    attendanceData.accuracy = userLocation.accuracy;
+                }
+                
+                // Simulate API call - replace with your actual endpoint
+                fetch('/record_attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(attendanceData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (!savedRegNo) {
+                            sessionStorage.setItem('savedRegNo', regNo);
+                            savedRegNo = regNo;
+                        }
+                        showMessage(`✓ Attendance recorded successfully! Welcome, ${data.student_name || regNo}`, 'success');
+                    } else {
+                        showError(`Failed to record attendance: ${data.message}`);
+                    }
+                    setTimeout(() => {
+                        resetScanner();
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error('Attendance submission error:', err);
+                    showError('Network error. Please check your connection and try again.');
+                    setTimeout(() => {
+                        resetScanner();
+                    }, 3000);
+                });
+            }
+
+            function submitAttendance() {
+                const regNo = regnoInput.value.trim();
+                
+                if (!regNo) {
+                    showError('Please enter your registration number.');
+                    regnoInput.focus();
+                    return;
+                }
+                
+                submitAttendanceWithRegNo(regNo);
+            }
+
+            function resetScanner() {
+                regnoPrompt.style.display = 'none';
+                regnoInput.value = '';
+                scannedQrDataString = null;
+                isScanning = true;
+                showMessage('Ready to scan QR code', 'scanning');
+                requestAnimationFrame(scanFrame);
+            }
+
+            // Event listeners
+            submitRegnoBtn.addEventListener('click', submitAttendance);
+            
+            regnoInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitAttendance();
+                }
+            });
+
+            output.addEventListener('click', function() {
+                if (output.className === 'success' || output.className === 'error') {
+                    resetScanner();
+                }
+            });
+
+            // Cleanup function
+            function cleanup() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                if (locationWatchId !== null) {
+                    navigator.geolocation.clearWatch(locationWatchId);
+                }
+                isScanning = false;
+            }
+
+            window.addEventListener('beforeunload', cleanup);
+            
+            // Start the camera
+            startCamera();
+        });
+    </script>
+</body>
+</html>

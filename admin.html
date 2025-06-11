@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <!-- jsPDF Libraries (keeping original functionality) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Keep original admin dashboard title -->
+        <h1>Admin Dashboard - AGP</h1>
+
+        <!-- Keep original security alerts section -->
+        <div id="security-alerts" class="security-alerts">
+            <!-- Alerts will be dynamically added here -->
+        </div>
+
+        <!-- Keep original statistics section -->
+        <div id="session-statistics">
+            <!-- Statistics will be dynamically added here -->
+        </div>
+
+        <!-- Apple-style Card Container for Create Session -->
+        <div class="session-card">
+            <!-- Header Section -->
+            <h2>Create New Session</h2>
+            <p class="session-subtitle">Set up a new attendance session with advanced security features</p>
+
+            <!-- Keep original form structure and IDs exactly the same -->
+            <form id="create-session-form">
+                <div class="form-group">
+                    <label for="class_id">Select Class:</label>
+                    <select id="class_id" required>
+                        <option value="">Loading Classes...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="semester">Semester:</label>
+                    <input type="text" id="semester" required placeholder="Semester between 1 to 6">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <!--  geolocation section structure -->
+                <div class="geo-settings-section">
+                    <h3>🌍 Geolocation Settings</h3>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="enable_geolocation"> 
+                            Enable location-based attendance (restrict to campus area)
+                        </label>
+                    </div>
+<div class="form-group" id="geo-fields">
+    <label for="geo_latitude">Campus Latitude:</label>
+    <input type="text" id="geo_latitude" name="geo_latitude" step="any" placeholder="e.g., 34.052235">
+    <label for="geo_longitude">Campus Longitude:</label>
+    <input type="text" id="geo_longitude" name="geo_longitude" step="any" placeholder="e.g., -118.243683">
+    <label for="geo_radius">Campus Radius (meters):</label>
+    <input type="number" id="geo_radius" name="geo_radius" min="1" placeholder="e.g., 100">
+    <button type="button" id="get-current-location">Get Current Location</button>
+    <div id="location-status-message" style="margin-top: 5px; font-size: 0.9em; color: #555;"></div>
+</div>
+
+        <!-- submit button -->
+                <button type="submit">Create Session & Generate QR</button>
+            </form>
+        </div>
+
+        <!-- QR display section -->
+        <div id="session-qr-display" style="display: none;">
+            <h3>QR Code for Session ID: <span id="display-session-id"></span></h3>
+            <p id="qr-session-info"></p>
+            <img id="session-qr-img" alt="QR Code">
+            <p id="qr-countdown" style="font-weight: bold; margin-top: 10px; display: none;"></p>
+            <p><small>This QR code is static and unique to this session.</small></p>
+        </div>
+
+        <!-- live attendance section -->
+        <div id="live-attendance-section">
+           <h2>Live Attendance Monitoring</h2>
+           <div class="monitor-controls">
+               <label for="monitor_session_id">Select Session to Monitor:</label>
+               <select id="monitor_session_id">
+                    <option value="">-- Select Session --</option>
+               </select>
+               <button id="print-pdf-report-btn" style="display:none;">📄 Print Attendance (PDF)</button>
+           </div>
+           <div id="live-attendance-status-wrapper">
+                <span id="live-attendance-status">Select a session...</span>
+           </div>
+           <ul id="live-attendance-list">
+           </ul>
+       </div>
+        <!-- active sessions section -->
+        <h2>Active Sessions</h2>
+        <ul id="session-list">
+            <li>Loading sessions...</li>
+        </ul>
+    </div>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

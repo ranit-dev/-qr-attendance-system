@@ -143,7 +143,7 @@ qr-attendance-system/
 ## 👨‍💻 Author
 
 - **Your Name**  
-  [your.email@example.com](mailto:your.email@example.com)
+  [ranitmanna77@gmail.com ](mailto:ranitmanna77@gmail.com)
 
 ---
 

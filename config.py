@@ -4,7 +4,7 @@ MAIL_CONFIG = {
     'MAIL_PORT': 587,
     'MAIL_USE_TLS': True,
     'MAIL_USERNAME': 'shoptalktales@gmail.com',
-    'MAIL_PASSWORD': 'ahfp yhei neup vonq',
+    'MAIL_PASSWORD': 'Your password',
     'MAIL_DEFAULT_SENDER': 'shoptalktales@gmail.com'
 }
 

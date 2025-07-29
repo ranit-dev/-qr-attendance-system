@@ -29,7 +29,6 @@
 
 ## 🖼️ Screenshots
 
-> *(Add your own screenshots here for best effect!)*
 
 | Home Page | QR Scanner | Admin Dashboard |
 |-----------|-----------|----------------|

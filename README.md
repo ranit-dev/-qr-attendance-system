@@ -15,7 +15,7 @@
 <p align="center" style="color:#4fd1c5;font-size:1.2em;">A modern, secure, and efficient web-based attendance solution for educational institutions.</p>
 
 ---
-
+Demo : [ https://ranitmanna77.pythonanywhere.com/ ]
 ## 🚀 Features
 
 - **Automated QR-based attendance** for students
